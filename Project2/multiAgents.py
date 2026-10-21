@@ -74,8 +74,55 @@ class ReflexAgent(Agent):
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
-        "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        
+        # Diem co ban sau khi thuc hien hanh dong
+        score = successorGameState.getScore()
+
+        # Chuyen danh sach thuc an sang dang danh sach toa do
+        foodList = newFood.asList()
+
+        # 1. Khuyen khich Pacman tien gan thuc an
+        if foodList:
+            foodDistances = [
+                manhattanDistance(newPos, food)
+                for food in foodList
+            ]
+            minFoodDistance = min(foodDistances)
+
+            score += 10.0 / (minFoodDistance + 1)
+
+            # Thuong khi an duoc thuc an
+            oldFoodCount = len(currentGameState.getFood().asList())
+            newFoodCount = len(foodList)
+            score += 10 * (oldFoodCount - newFoodCount)
+
+        # 2. Tranh ma va tan dung khi ma dang so hai
+        for ghostState in newGhostStates:
+            ghostPos = ghostState.getPosition()
+
+            ghostDistance = manhattanDistance(newPos, ghostPos)
+            scaredTimer = ghostState.scaredTimer
+
+            if scaredTimer > 0:
+                # Chi khuyen khich den gan ma neu co kha nang an ma
+                if ghostDistance < scaredTimer:
+                    score += 8.0 / (ghostDistance + 1)
+            else:
+                # Ma khong so hai: tranh cac vi tri nguy hiem
+                if ghostDistance == 0:
+                    score -= 1000
+                elif ghostDistance == 1:
+                    score -= 200
+                elif ghostDistance == 2:
+                    score -= 50
+                elif ghostDistance == 3:
+                    score -= 10
+
+        # 3. Han che dung yen khi van con thuc an
+        if action == Directions.STOP and foodList:
+            score -= 10
+
+        return score
 
 def scoreEvaluationFunction(currentGameState: GameState):
     """
