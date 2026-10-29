@@ -107,6 +107,7 @@ class MultiAgentSearchAgent(Agent):
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
 
+
 class MinimaxAgent(MultiAgentSearchAgent):
     """
     Your minimax agent (question 2)
@@ -116,27 +117,70 @@ class MinimaxAgent(MultiAgentSearchAgent):
         """
         Returns the minimax action from the current gameState using self.depth
         and self.evaluationFunction.
-
-        Here are some method calls that might be useful when implementing minimax.
-
-        gameState.getLegalActions(agentIndex):
-        Returns a list of legal actions for an agent
-        agentIndex=0 means Pacman, ghosts are >= 1
-
-        gameState.generateSuccessor(agentIndex, action):
-        Returns the successor game state after an agent takes an action
-
-        gameState.getNumAgents():
-        Returns the total number of agents in the game
-
-        gameState.isWin():
-        Returns whether or not the game state is a winning state
-
-        gameState.isLose():
-        Returns whether or not the game state is a losing state
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        numAgents = gameState.getNumAgents()
+
+        def minimax(state, depth, agentIndex):
+            # Dung neu Pacman thang hoac thua
+            if state.isWin() or state.isLose():
+                return self.evaluationFunction(state), None
+
+            # Dung khi da dat do sau yeu cau
+            if depth == self.depth:
+                return self.evaluationFunction(state), None
+
+            legalActions = state.getLegalActions(agentIndex)
+
+            if not legalActions:
+                return self.evaluationFunction(state), None
+
+            # Xac dinh agent tiep theo
+            nextAgent = (agentIndex + 1) % numAgents
+
+            # Chi tang depth khi quay lai luot Pacman
+            nextDepth = depth + 1 if nextAgent == 0 else depth
+
+            if agentIndex == 0:
+                # Pacman la MAX
+                bestValue = float("-inf")
+                bestAction = None
+
+                for action in legalActions:
+                    successor = state.generateSuccessor(agentIndex, action)
+
+                    value, _ = minimax(
+                        successor, nextDepth, nextAgent
+                    )
+
+                    if value > bestValue:
+                        bestValue = value
+                        bestAction = action
+
+                return bestValue, bestAction
+
+            else:
+                # Ghost la MIN
+                bestValue = float("inf")
+                bestAction = None
+
+                for action in legalActions:
+                    successor = state.generateSuccessor(agentIndex, action)
+
+                    value, _ = minimax(
+                        successor, nextDepth, nextAgent
+                    )
+
+                    if value < bestValue:
+                        bestValue = value
+                        bestAction = action
+
+                return bestValue, bestAction
+
+        # Bat dau tim kiem tu Pacman (agent 0), depth = 0
+        _, action = minimax(gameState, 0, 0)
+
+        return action
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
