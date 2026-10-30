@@ -294,16 +294,26 @@ class CornersProblem(search.SearchProblem):
         """
         Returns the start state (in your state space, not the full Pacman state
         space)
+
+        State representation: (position, corners_visited)
+          - position        : (x, y) — vị trí Pacman
+          - corners_visited : tuple 4 bool — góc nào đã thăm
+                              theo thứ tự self.corners
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # *** Q5 — TV2 ***
+        pos = self.startingPosition
+        # Kiểm tra ngay nếu vị trí ban đầu trùng một góc nào đó
+        visited = tuple(pos == corner for corner in self.corners)
+        return (pos, visited)
 
     def isGoalState(self, state: Any):
         """
         Returns whether this search state is a goal state of the problem.
+        Goal: tất cả 4 góc đã được thăm.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # *** Q5 — TV2 ***
+        _pos, visited = state
+        return all(visited)
 
     def getSuccessors(self, state: Any):
         """
@@ -325,7 +335,22 @@ class CornersProblem(search.SearchProblem):
             #   nextx, nexty = int(x + dx), int(y + dy)
             #   hitsWall = self.walls[nextx][nexty]
 
-            "*** YOUR CODE HERE ***"
+            # *** Q5 — TV2 ***
+            x, y = state[0]
+            _, visited = state
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            hitsWall = self.walls[nextx][nexty]
+
+            if not hitsWall:
+                next_pos = (nextx, nexty)
+                # Cập nhật danh sách góc đã thăm
+                new_visited = tuple(
+                    v or (next_pos == corner)
+                    for v, corner in zip(visited, self.corners)
+                )
+                next_state = (next_pos, new_visited)
+                successors.append((next_state, action, 1))
 
         self._expanded += 1 # DO NOT CHANGE
         return successors
@@ -360,8 +385,44 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
     corners = problem.corners # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
-    "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    # *** Q6 — TV2 ***
+    # Chiến lược: Greedy nearest-corner chain bằng Manhattan distance.
+    # Từ vị trí hiện tại, luôn đi đến góc gần nhất chưa thăm,
+    # rồi từ đó tiếp tục đến góc gần tiếp theo, cộng dồn khoảng cách.
+    #
+    # ADMISSIBLE: Manhattan <= đường đi thực tế (qua tường) → không over-estimate.
+    # CONSISTENT: mỗi bước giảm Manhattan tối đa 1 → h(s) - h(s') <= 1 = cost. ✓
+
+    position, visited_corners = state
+
+    # Danh sách các góc chưa thăm
+    unvisited = [
+        corner for corner, visited in zip(corners, visited_corners)
+        if not visited
+    ]
+
+    if not unvisited:
+        return 0  # Goal state
+
+    current_pos = position
+    total_cost  = 0
+    remaining   = list(unvisited)
+
+    while remaining:
+        # Tìm góc gần nhất theo Manhattan distance
+        nearest_dist = min(
+            util.manhattanDistance(current_pos, corner)
+            for corner in remaining
+        )
+        total_cost += nearest_dist
+        # Di chuyển đến góc đó và xoá khỏi danh sách
+        for corner in remaining:
+            if util.manhattanDistance(current_pos, corner) == nearest_dist:
+                current_pos = corner
+                remaining.remove(corner)
+                break
+
+    return total_cost
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -454,8 +515,33 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     problem.heuristicInfo['wallCount']
     """
     position, foodGrid = state
-    "*** YOUR CODE HERE ***"
-    return 0
+
+    # *** Q7 — TV2 ***
+    # Chiến lược: trả về maze distance lớn nhất đến bất kỳ food dot nào.
+    #
+    # ADMISSIBLE: phải đến food xa nhất → chi phí >= mazeDistance đó.
+    #             mazeDistance = BFS chính xác → không over-estimate. ✓
+    # CONSISTENT: mỗi bước giảm maze distance tối đa 1.
+    #             => h(s) - h(s') <= 1 = cost(action). ✓
+    # CACHE: lưu vào problem.heuristicInfo để tránh tính lại cùng cặp điểm.
+
+    foodList = foodGrid.asList()
+
+    if not foodList:
+        return 0  # Goal state — không còn food
+
+    max_dist = 0
+    for food in foodList:
+        key = (position, food)
+        if key not in problem.heuristicInfo:
+            problem.heuristicInfo[key] = mazeDistance(
+                position, food, problem.startingGameState
+            )
+        dist = problem.heuristicInfo[key]
+        if dist > max_dist:
+            max_dist = dist
+
+    return max_dist
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
