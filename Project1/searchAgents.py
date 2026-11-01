@@ -294,16 +294,26 @@ class CornersProblem(search.SearchProblem):
         """
         Returns the start state (in your state space, not the full Pacman state
         space)
+
+        State representation: (position, corners_visited)
+          - position        : (x, y) — vị trí Pacman
+          - corners_visited : tuple 4 bool — góc nào đã thăm
+                              theo thứ tự self.corners
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # *** Q5 — TV2 ***
+        pos = self.startingPosition
+        # Kiểm tra ngay nếu vị trí ban đầu trùng một góc nào đó
+        visited = tuple(pos == corner for corner in self.corners)
+        return (pos, visited)
 
     def isGoalState(self, state: Any):
         """
         Returns whether this search state is a goal state of the problem.
+        Goal: tất cả 4 góc đã được thăm.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # *** Q5 — TV2 ***
+        _pos, visited = state
+        return all(visited)
 
     def getSuccessors(self, state: Any):
         """
@@ -325,7 +335,22 @@ class CornersProblem(search.SearchProblem):
             #   nextx, nexty = int(x + dx), int(y + dy)
             #   hitsWall = self.walls[nextx][nexty]
 
-            "*** YOUR CODE HERE ***"
+            # *** Q5 — TV2 ***
+            x, y = state[0]
+            _, visited = state
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            hitsWall = self.walls[nextx][nexty]
+
+            if not hitsWall:
+                next_pos = (nextx, nexty)
+                # Cập nhật danh sách góc đã thăm
+                new_visited = tuple(
+                    v or (next_pos == corner)
+                    for v, corner in zip(visited, self.corners)
+                )
+                next_state = (next_pos, new_visited)
+                successors.append((next_state, action, 1))
 
         self._expanded += 1 # DO NOT CHANGE
         return successors
@@ -454,6 +479,7 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     problem.heuristicInfo['wallCount']
     """
     position, foodGrid = state
+
     "*** YOUR CODE HERE ***"
     return 0
 
