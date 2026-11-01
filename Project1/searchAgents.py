@@ -385,8 +385,44 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
     corners = problem.corners # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
-    "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    # *** Q6 — TV2 ***
+    # Chiến lược: Greedy nearest-corner chain bằng Manhattan distance.
+    # Từ vị trí hiện tại, luôn đi đến góc gần nhất chưa thăm,
+    # rồi từ đó tiếp tục đến góc gần tiếp theo, cộng dồn khoảng cách.
+    #
+    # ADMISSIBLE: Manhattan <= đường đi thực tế (qua tường) → không over-estimate.
+    # CONSISTENT: mỗi bước giảm Manhattan tối đa 1 → h(s) - h(s') <= 1 = cost. ✓
+
+    position, visited_corners = state
+
+    # Danh sách các góc chưa thăm
+    unvisited = [
+        corner for corner, visited in zip(corners, visited_corners)
+        if not visited
+    ]
+
+    if not unvisited:
+        return 0  # Goal state
+
+    current_pos = position
+    total_cost  = 0
+    remaining   = list(unvisited)
+
+    while remaining:
+        # Tìm góc gần nhất theo Manhattan distance
+        nearest_dist = min(
+            util.manhattanDistance(current_pos, corner)
+            for corner in remaining
+        )
+        total_cost += nearest_dist
+        # Di chuyển đến góc đó và xoá khỏi danh sách
+        for corner in remaining:
+            if util.manhattanDistance(current_pos, corner) == nearest_dist:
+                current_pos = corner
+                remaining.remove(corner)
+                break
+
+    return total_cost
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
