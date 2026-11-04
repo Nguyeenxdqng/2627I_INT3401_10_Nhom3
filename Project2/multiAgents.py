@@ -138,6 +138,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         "*** YOUR CODE HERE ***"
         util.raiseNotDefined()
 
+
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
     Your minimax agent with alpha-beta pruning (question 3)
@@ -147,8 +148,134 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
         Returns the minimax action using self.depth and self.evaluationFunction
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        # 1. Lấy số lượng tác nhân
+        numAgents = gameState.getNumAgents()
+
+        # 2. Lấy các hành động hợp lệ của Pacman
+        legalActions = gameState.getLegalActions(0)
+
+        if not legalActions:
+            return Directions.STOP
+
+        # 3. Khởi tạo giá trị tốt nhất và Alpha, Beta
+        bestAction = None
+        bestValue = float('-inf')
+
+        alpha = float('-inf')
+        beta = float('inf')
+
+        # 4. Hàm đệ quy Alpha-Beta
+        def alphaBeta(state, agentIndex, depth, alpha, beta):
+
+            # Điều kiện dừng
+            if (depth == self.depth or
+                    state.isWin() or state.isLose()):
+                return self.evaluationFunction(state)
+
+            # Lấy các hành động hợp lệ
+            actions = state.getLegalActions(agentIndex)
+
+            if not actions:
+                return self.evaluationFunction(state)
+
+            # Xác định tác nhân tiếp theo
+            nextAgent = (agentIndex + 1) % numAgents
+
+            # Chỉ tăng depth khi quay lại lượt Pacman
+            nextDepth = depth + 1 if nextAgent == 0 else depth
+
+            # 5. Nút MAX - Pacman
+            if agentIndex == 0:
+
+                value = float('-inf')
+
+                for action in actions:
+
+                    successor = state.generateSuccessor(
+                        agentIndex, action
+                    )
+
+                    value = max(
+                        value,
+                        alphaBeta(
+                            successor,
+                            nextAgent,
+                            nextDepth,
+                            alpha,
+                            beta
+                        )
+                    )
+
+                    # Cập nhật Alpha
+                    alpha = max(alpha, value)
+
+                    # Cắt tỉa, không cắt khi bằng nhau
+                    if value > beta:
+                        return value
+
+                return value
+
+            # 6. Nút MIN - Ghost
+            else:
+
+                value = float('inf')
+
+                for action in actions:
+
+                    successor = state.generateSuccessor(
+                        agentIndex, action
+                    )
+
+                    value = min(
+                        value,
+                        alphaBeta(
+                            successor,
+                            nextAgent,
+                            nextDepth,
+                            alpha,
+                            beta
+                        )
+                    )
+
+                    # Cập nhật Beta
+                    beta = min(beta, value)
+
+                    # Cắt tỉa, không cắt khi bằng nhau
+                    if value < alpha:
+                        return value
+
+                return value
+
+        # 7. Duyệt các hành động đầu tiên của Pacman
+        for action in legalActions:
+
+            successor = gameState.generateSuccessor(0, action)
+
+            # Xác định tác nhân tiếp theo
+            nextAgent = (0 + 1) % numAgents
+
+            # Nếu chỉ có Pacman thì chuyển sang lượt mới
+            nextDepth = 1 if nextAgent == 0 else 0
+
+            # Tính giá trị của nhánh
+            value = alphaBeta(
+                successor,
+                nextAgent,
+                nextDepth,
+                alpha,
+                beta
+            )
+
+            # Lưu hành động có giá trị tốt nhất
+            if value > bestValue:
+                bestValue = value
+                bestAction = action
+
+            # Cập nhật Alpha tại nút gốc
+            alpha = max(alpha, bestValue)
+
+        return bestAction
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
