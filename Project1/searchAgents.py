@@ -516,8 +516,32 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     """
     position, foodGrid = state
 
-    "*** YOUR CODE HERE ***"
-    return 0
+    # *** Q7 — TV2 ***
+    # Chiến lược: trả về maze distance lớn nhất đến bất kỳ food dot nào.
+    #
+    # ADMISSIBLE: phải đến food xa nhất → chi phí >= mazeDistance đó.
+    #             mazeDistance = BFS chính xác → không over-estimate. ✓
+    # CONSISTENT: mỗi bước giảm maze distance tối đa 1.
+    #             => h(s) - h(s') <= 1 = cost(action). ✓
+    # CACHE: lưu vào problem.heuristicInfo để tránh tính lại cùng cặp điểm.
+
+    foodList = foodGrid.asList()
+
+    if not foodList:
+        return 0  # Goal state — không còn food
+
+    max_dist = 0
+    for food in foodList:
+        key = (position, food)
+        if key not in problem.heuristicInfo:
+            problem.heuristicInfo[key] = mazeDistance(
+                position, food, problem.startingGameState
+            )
+        dist = problem.heuristicInfo[key]
+        if dist > max_dist:
+            max_dist = dist
+
+    return max_dist
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
