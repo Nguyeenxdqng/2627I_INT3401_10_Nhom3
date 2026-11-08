@@ -368,20 +368,118 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
         return bestAction
 
+
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
-      Your expectimax agent (question 4)
+    Your expectimax agent (question 4)
     """
 
     def getAction(self, gameState: GameState):
         """
         Returns the expectimax action using self.depth and self.evaluationFunction
 
-        All ghosts should be modeled as choosing uniformly at random from their
-        legal moves.
+        All ghosts should be modeled as choosing uniformly at random
+        from their legal moves.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        # 1. Lấy số lượng tác nhân
+        numAgents = gameState.getNumAgents()
+
+        # 2. Lấy các hành động hợp lệ của Pacman
+        legalActions = gameState.getLegalActions(0)
+
+        if not legalActions:
+            return Directions.STOP
+
+        # 3. Khởi tạo giá trị tốt nhất
+        bestAction = None
+        bestValue = float('-inf')
+
+        # 4. Hàm đệ quy Expectimax
+        def expectimax(state, agentIndex, depth):
+
+            # Kiểm tra điều kiện dừng
+            if (depth == self.depth or
+                    state.isWin() or state.isLose()):
+                return self.evaluationFunction(state)
+
+            # Lấy danh sách hành động hợp lệ
+            actions = state.getLegalActions(agentIndex)
+
+            if not actions:
+                return self.evaluationFunction(state)
+
+            # Xác định tác nhân tiếp theo
+            nextAgent = (agentIndex + 1) % numAgents
+
+            # Chỉ tăng độ sâu khi quay lại lượt Pacman
+            nextDepth = depth + 1 if nextAgent == 0 else depth
+
+            # 5. Nút MAX - Pacman
+            if agentIndex == 0:
+
+                value = float('-inf')
+
+                for action in actions:
+
+                    successor = state.generateSuccessor(
+                        agentIndex, action
+                    )
+
+                    value = max(
+                        value,
+                        expectimax(
+                            successor,
+                            nextAgent,
+                            nextDepth
+                        )
+                    )
+
+                return value
+
+            # 6. Nút CHANCE - Ghost
+            else:
+
+                totalValue = 0
+
+                # Duyệt tất cả hành động của Ghost
+                for action in actions:
+
+                    successor = state.generateSuccessor(
+                        agentIndex, action
+                    )
+
+                    totalValue += expectimax(
+                        successor,
+                        nextAgent,
+                        nextDepth
+                    )
+
+                # Xác suất mỗi hành động bằng nhau
+                return totalValue / len(actions)
+
+        # 7. Duyệt các hành động ban đầu của Pacman
+        for action in legalActions:
+
+            successor = gameState.generateSuccessor(0, action)
+
+            nextAgent = (0 + 1) % numAgents
+
+            # Nếu chỉ có Pacman thì bắt đầu lượt mới
+            nextDepth = 1 if nextAgent == 0 else 0
+
+            value = expectimax(
+                successor,
+                nextAgent,
+                nextDepth
+            )
+
+            # Lưu hành động có giá trị kỳ vọng cao nhất
+            if value > bestValue:
+                bestValue = value
+                bestAction = action
+
+        return bestAction
 
 def betterEvaluationFunction(currentGameState: GameState):
     """
