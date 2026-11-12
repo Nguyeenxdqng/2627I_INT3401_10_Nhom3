@@ -483,13 +483,34 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
 def betterEvaluationFunction(currentGameState: GameState):
     """
-    Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
-    evaluation function (question 5).
-
-    DESCRIPTION: <write something here so we know what you did>
+    V2: diem, thuc an, khoang cach den ma nguy hiem
+    va co hoi an ma dang so.
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    score = float(currentGameState.getScore())
+    if currentGameState.isWin():
+        return score + 1_000_000.0
+    if currentGameState.isLose():
+        return score - 1_000_000.0
+
+    position = currentGameState.getPacmanPosition()
+    foods = currentGameState.getFood().asList()
+    score -= 4.0 * len(foods)
+
+    if foods:
+        nearest_food = min(manhattanDistance(position, food) for food in foods)
+        score += 10.0 / (nearest_food + 1.0)
+
+    for ghost in currentGameState.getGhostStates():
+        distance = manhattanDistance(position, ghost.getPosition())
+        if ghost.scaredTimer > 0:
+            if distance < ghost.scaredTimer:
+                score += 20.0 / (distance + 1.0)
+        else:
+            score -= 12.0 / (distance + 1.0)
+            if distance <= 1:
+                score -= 200.0
+
+    return score
 
 # Abbreviation
 better = betterEvaluationFunction
