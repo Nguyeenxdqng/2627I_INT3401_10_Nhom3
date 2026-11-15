@@ -1,0 +1,207 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage[utf8]{vietnam}
+\usepackage[vietnamese, english]{babel}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{multirow}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+% Đánh dấu chỗ cần điền (chữ đỏ). Xóa lệnh này khi nộp: thay \todo{...} bằng nội dung thật.
+\newcommand{\todo}[1]{\textcolor{red}{[#1]}}
+
+\begin{document}
+\selectlanguage{vietnamese}
+
+\title{Cài đặt thuật toán tìm kiếm và tìm kiếm đối kháng\\cho Pac-Man (CS188 Project 1 và Project 2)}
+
+\author{\IEEEauthorblockN{Trường Ngọc Anh}
+\IEEEauthorblockA{\textit{Mã sinh viên:} \todo{MSSV}}
+\and
+\IEEEauthorblockN{Giáp Vũ Diệu Kỳ}
+\IEEEauthorblockA{\textit{Mã sinh viên:} \todo{MSSV}}
+\and
+\IEEEauthorblockN{Nguyễn Mai Phương Thúy}
+\IEEEauthorblockA{\textit{Mã sinh viên:} \todo{MSSV}}
+\and
+\IEEEauthorblockN{Nguyễn Hồng Đăng}
+\IEEEauthorblockA{\textit{Mã sinh viên:} 24022956}
+}
+
+\maketitle
+
+\renewcommand{\abstractname}{Tóm tắt}
+\renewcommand{\figurename}{Hình}
+\renewcommand{\tablename}{Bảng}
+\renewcommand{\IEEEkeywordsname}{Từ khoá}
+\renewcommand{\refname}{Tài liệu tham khảo}
+
+\begin{abstract}
+Báo cáo trình bày việc cài đặt các thuật toán tìm kiếm (DFS, BFS, UCS, A*) và tìm kiếm đối kháng (Minimax, Alpha-Beta, Expectimax) để điều khiển Pac-Man trong bộ bài tập CS188 (Project 1 và Project 2). \todo{Thêm 2-3 câu tóm tắt kết quả chính: điểm Autograder, số nút mở rộng, tỉ lệ thắng.}
+Mã nguồn: \url{https://github.com/\todo{tai-khoan}/\todo{ten-repo}}.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Pac-Man, tìm kiếm, A*, heuristic, Minimax, Alpha-Beta, Expectimax.
+\end{IEEEkeywords}
+
+\section{Giới thiệu}
+
+\subsection{Tổng quan và mô tả bài toán}
+Pac-Man là môi trường mẫu trong môn học CS188 của UC Berkeley \cite{b6}. Báo cáo gồm hai phần:
+\begin{itemize}
+\item \textbf{Project 1 (Search):} tìm đường đi cho Pac-Man trên mê cung tĩnh, từ tìm đến một điểm cố định đến ăn hết thức ăn, gồm 8 câu (q1--q8).
+\item \textbf{Project 2 (Multiagent Search):} Pac-Man đối đầu với các ma, gồm 5 câu (q1--q5).
+\end{itemize}
+\todo{Nêu rõ vấn đề cần giải quyết: Project 1 là bài toán tìm kiếm trên không gian trạng thái nào, mục tiêu tối ưu gì; Project 2 là bài toán ra quyết định đối kháng với tiêu chí gì. Khoảng 1 đoạn mỗi project.}
+
+\subsection{Phân công công việc}
+\begin{table}[!ht]
+    \centering
+    \renewcommand{\arraystretch}{1.15}
+    \scriptsize
+    \caption{Bảng phân công công việc cho từng thành viên.}
+    \label{tab:phancong}
+    \resizebox{\columnwidth}{!}{%
+    \begin{tabular}{cccp{4.6cm}}
+    \hline
+        \textbf{Thành viên} & \textbf{Mã sinh viên} & \textbf{Đóng góp} & \textbf{Công việc} \\
+    \hline
+        Trường Ngọc Anh & \todo{MSSV} & 25\% & P1: q1--q4 (DFS, BFS, UCS, A*), q8 (ClosestDot); testcase so sánh Minimax và Alpha-Beta \\
+        Giáp Vũ Diệu Kỳ & \todo{MSSV} & 25\% & P1: q5 (CornersProblem), q6, q7 (heuristic); P2: q5 (cùng TV4) \\
+        Nguyễn Mai Phương Thúy & \todo{MSSV} & 25\% & P2: q1 (Reflex), q2 (Minimax), q3 (Alpha-Beta), q4 (Expectimax) \\
+        Nguyễn Hồng Đăng & 24022956 & 25\% & P0: môi trường, repo Git, Autograder; script kiểm thử; P2: q5 (cùng TV2); tổng hợp báo cáo \\
+    \hline
+    \end{tabular}}
+\end{table}
+
+\subsection{Bố cục}
+\todo{1-2 câu: Mục II trình bày phương pháp, Mục III trình bày thực nghiệm và kết quả, Mục IV kết luận.}
+
+\section{Phương pháp thực hiện}
+
+\subsection{Project 1: Tìm kiếm}
+
+\subsubsection{Các thuật toán tìm kiếm cơ bản (q1--q4)}
+Cả bốn thuật toán cùng dùng khung tìm kiếm đồ thị (graph search) với tập nút đã thăm, chỉ khác cấu trúc lưu biên: \texttt{Stack} cho DFS, \texttt{Queue} cho BFS, \texttt{PriorityQueue} theo chi phí $g(n)$ cho UCS, và theo $f(n)=g(n)+h(n)$ cho A* \cite{b1,b2,b5}. Kiểm tra đích khi lấy nút ra khỏi biên.
+\begin{equation}
+f(n)=g(n)+h(n)\label{eq:astar}
+\end{equation}
+\todo{Nêu thêm: cách lưu đường đi (hành động), xử lý nút trùng, tính tối ưu và độ phức tạp của từng thuật toán.}
+
+\subsubsection{Bài toán bốn góc và heuristic (q5, q6)}
+\todo{Biểu diễn trạng thái của CornersProblem (vị trí + các góc đã thăm), hàm kế tiếp, kiểm tra đích. Mô tả heuristic cho q6 và chứng minh admissible, consistent.}
+
+\subsubsection{Heuristic cho bài toán ăn hết thức ăn (q7)}
+\todo{Mô tả foodHeuristic (ví dụ dùng khoảng cách mê cung \texttt{mazeDistance} giữa các thức ăn xa nhất), chứng minh admissible, consistent; nêu cách lưu đệm trong \texttt{problem.heuristicInfo}.}
+
+\subsubsection{Tìm thức ăn gần nhất (q8)}
+\todo{Cách dùng BFS trên \texttt{AnyFoodSearchProblem} để lặp tìm thức ăn gần nhất; nhận xét đường đi tham lam không đảm bảo tối ưu toàn cục.}
+
+\subsection{Project 2: Tìm kiếm đối kháng}
+
+\subsubsection{ReflexAgent (q1)}
+\todo{Các đặc trưng trong hàm đánh giá: khoảng cách đến thức ăn gần nhất, khoảng cách đến ma, thời gian ma bị dọa; trọng số.}
+
+\subsubsection{Minimax và Alpha-Beta (q2, q3)}
+Minimax luân phiên tầng max (Pac-Man, \texttt{agentIndex}=0) và các tầng min (mỗi con ma một tầng); một mức độ sâu tính trọn một lượt của mọi tác tử \cite{b1,b3}. Alpha-Beta cắt tỉa các nhánh không ảnh hưởng đến giá trị tại gốc, nên cho cùng kết quả với Minimax nhưng sinh ít nút hơn \cite{b4}.
+\todo{Công thức/giả mã cho hai thuật toán (có thể dùng gói \texttt{algorithmic}); điều kiện cắt tỉa $\alpha$, $\beta$.}
+
+\subsubsection{Expectimax (q4)}
+\todo{Mô hình ma chọn hành động ngẫu nhiên đều; tầng kỳ vọng thay cho tầng min; khác biệt hành vi so với Minimax.}
+
+\subsubsection{Hàm đánh giá tốt hơn (q5)}
+\todo{Các đặc trưng đã chọn (thức ăn, capsule, ma thường, ma bị dọa), công thức tổ hợp tuyến tính, cách chọn trọng số.}
+
+\section{Thực nghiệm và kết quả}
+
+\subsection{Thiết lập thực nghiệm}
+\todo{Môi trường (Python, hệ điều hành), layout dùng, seed, số ván mỗi cấu hình, tiêu chí đo (số nút mở rộng, độ dài/chi phí đường đi, tỉ lệ thắng, điểm trung bình, thời gian).}
+
+\subsection{Kết quả Project 1}
+\begin{table}[!ht]
+    \centering
+    \caption{Số nút mở rộng và chi phí đường đi trên các mê cung.}
+    \label{tab:p1}
+    \begin{tabular}{lcccc}
+    \toprule
+    Layout & DFS & BFS & UCS & A* \\
+    \midrule
+    \texttt{mediumMaze} & \todo{} & \todo{} & \todo{} & \todo{} \\
+    \texttt{bigMaze} & \todo{} & \todo{} & \todo{} & \todo{} \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \caption{Số nút mở rộng của A* với các heuristic (q6, q7).}
+    \label{tab:heur}
+    \begin{tabular}{lcc}
+    \toprule
+    Bài toán & Heuristic rỗng & Heuristic của nhóm \\
+    \midrule
+    Corners (\texttt{mediumCorners}) & \todo{} & \todo{} \\
+    Food (\texttt{trickySearch}) & \todo{} & \todo{} \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+\todo{Nhận xét ngắn: thuật toán nào mở rộng ít nút nhất, heuristic cải thiện bao nhiêu.}
+
+\subsection{Kết quả Project 2}
+\begin{table}[!ht]
+    \centering
+    \caption{So sánh các tác tử trên \texttt{smallClassic} ($n$ ván).}
+    \label{tab:p2}
+    \begin{tabular}{lccc}
+    \toprule
+    Tác tử & Tỉ lệ thắng & Điểm TB & Thời gian/ván \\
+    \midrule
+    Reflex & \todo{} & \todo{} & \todo{} \\
+    Minimax (depth 3) & \todo{} & \todo{} & \todo{} \\
+    Alpha-Beta (depth 3) & \todo{} & \todo{} & \todo{} \\
+    Expectimax (depth 3) & \todo{} & \todo{} & \todo{} \\
+    Hàm đánh giá tốt hơn & \todo{} & \todo{} & \todo{} \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+\todo{Nhận xét: Alpha-Beta giảm thời gian bao nhiêu so với Minimax với cùng kết quả; Expectimax so với Minimax khi ma ngẫu nhiên.}
+
+\subsection{Kết quả Autograder}
+\begin{table}[!ht]
+    \centering
+    \caption{Điểm Autograder.}
+    \label{tab:grader}
+    \begin{tabular}{lcc}
+    \toprule
+    Phần & Điểm đạt & Điểm tối đa \\
+    \midrule
+    Project 1 (q1--q8) & \todo{} & 25 \\
+    Project 2 (q1--q5) & \todo{} & 25 \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+% Có thể thêm hình: \begin{figure}[htbp]\centerline{\includegraphics[width=\columnwidth]{hinh1.png}}\caption{...}\label{fig:hinh1}\end{figure}
+
+\section{Kết luận}
+\todo{Kết quả đạt được, hạn chế, hướng phát triển (3-5 câu).}
+
+\begin{thebibliography}{00}
+\bibitem{b1} S. Russell and P. Norvig, \textit{Artificial Intelligence: A Modern Approach}, 4th ed. Hoboken, NJ: Pearson, 2021.
+\bibitem{b2} P. E. Hart, N. J. Nilsson, and B. Raphael, ``A formal basis for the heuristic determination of minimum cost paths,'' \textit{IEEE Trans. Syst. Sci. Cybern.}, vol. 4, no. 2, pp. 100--107, Jul. 1968.
+\bibitem{b3} C. E. Shannon, ``Programming a computer for playing chess,'' \textit{Philos. Mag.}, vol. 41, no. 314, pp. 256--275, 1950.
+\bibitem{b4} D. E. Knuth and R. W. Moore, ``An analysis of alpha-beta pruning,'' \textit{Artif. Intell.}, vol. 6, no. 4, pp. 293--326, 1975.
+\bibitem{b5} E. W. Dijkstra, ``A note on two problems in connexion with graphs,'' \textit{Numer. Math.}, vol. 1, pp. 269--271, 1959.
+\bibitem{b6} J. DeNero and D. Klein, ``Teaching introductory artificial intelligence with Pac-Man,'' in \textit{Proc. 1st Symp. Educ. Adv. Artif. Intell. (EAAI)}, 2010.
+\end{thebibliography}
+
+\end{document}
