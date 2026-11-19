@@ -13,25 +13,26 @@
 \usepackage{tabularx}
 \usepackage{array}
 \usepackage{multirow}
+\usepackage{url}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
-% Đánh dấu chỗ cần điền (chữ đỏ). Xóa lệnh này khi nộp: thay \todo{...} bằng nội dung thật.
-\newcommand{\todo}[1]{\textcolor{red}{[#1]}}
-
+\usepackage{float}
 \begin{document}
 \selectlanguage{vietnamese}
 
 \title{Cài đặt thuật toán tìm kiếm và tìm kiếm đối kháng\\cho Pac-Man (CS188 Project 1 và Project 2)}
 
 \author{\IEEEauthorblockN{Trường Ngọc Anh}
-\IEEEauthorblockA{\textit{Mã sinh viên:} \todo{MSSV}}
+\IEEEauthorblockA{\textit{Mã sinh viên:} 24022944}
 \and
 \IEEEauthorblockN{Giáp Vũ Diệu Kỳ}
-\IEEEauthorblockA{\textit{Mã sinh viên:} \todo{MSSV}}
+\IEEEauthorblockA{\textit{Mã sinh viên:} 24023008}
 \and
 \IEEEauthorblockN{Nguyễn Mai Phương Thúy}
-\IEEEauthorblockA{\textit{Mã sinh viên:} \todo{MSSV}}
+\IEEEauthorblockA{\textit{Mã sinh viên:} 24023072}
 \and
 \IEEEauthorblockN{Nguyễn Hồng Đăng}
 \IEEEauthorblockA{\textit{Mã sinh viên:} 24022956}
@@ -43,11 +44,9 @@
 \renewcommand{\figurename}{Hình}
 \renewcommand{\tablename}{Bảng}
 \renewcommand{\IEEEkeywordsname}{Từ khoá}
-\renewcommand{\refname}{Tài liệu tham khảo}
 
 \begin{abstract}
-Báo cáo trình bày việc cài đặt các thuật toán tìm kiếm (DFS, BFS, UCS, A*) và tìm kiếm đối kháng (Minimax, Alpha-Beta, Expectimax) để điều khiển Pac-Man trong bộ bài tập CS188 (Project 1 và Project 2). \todo{Thêm 2-3 câu tóm tắt kết quả chính: điểm Autograder, số nút mở rộng, tỉ lệ thắng.}
-Mã nguồn: \url{https://github.com/\todo{tai-khoan}/\todo{ten-repo}}.
+Báo cáo trình bày việc cài đặt các thuật toán tìm kiếm (DFS, BFS, UCS, A*) và tìm kiếm đối kháng (Minimax, Alpha-Beta, Expectimax) để điều khiển Pac-Man trong bộ bài tập CS188 (Project 1 và Project 2). Autograder cho 26/25 điểm ở Project 1 (câu q7 đạt 5 điểm so với trần 4 điểm trong tệp cấu hình) và 25/25 điểm ở Project 2. So với heuristic rỗng, heuristic của nhóm giảm số nút mở rộng của A* 64,80\% trên \texttt{mediumCorners} và 75,21\% trên \texttt{trickySearch}. Alpha-Beta cho cùng hành động với Minimax tại hai trạng thái được kiểm tra và giảm số trạng thái ghi nhận từ 20,59\% đến 61,23\%. Expectimax độ sâu 2 kết hợp hàm đánh giá của nhóm thắng 10/10 ván trên \texttt{smallClassic} với điểm trung bình 1405,9. Mã nguồn GitHub: \url{https://github.com/Nguyeenxdqng/2627I_INT3401_10_Nhom3}
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -62,139 +61,321 @@ Pac-Man là môi trường mẫu trong môn học CS188 của UC Berkeley \cite{
 \item \textbf{Project 1 (Search):} tìm đường đi cho Pac-Man trên mê cung tĩnh, từ tìm đến một điểm cố định đến ăn hết thức ăn, gồm 8 câu (q1--q8).
 \item \textbf{Project 2 (Multiagent Search):} Pac-Man đối đầu với các ma, gồm 5 câu (q1--q5).
 \end{itemize}
-\todo{Nêu rõ vấn đề cần giải quyết: Project 1 là bài toán tìm kiếm trên không gian trạng thái nào, mục tiêu tối ưu gì; Project 2 là bài toán ra quyết định đối kháng với tiêu chí gì. Khoảng 1 đoạn mỗi project.}
+
+\textit{Project 1.} Mỗi bài toán là một \texttt{SearchProblem} gồm trạng thái ban đầu, phép kiểm tra đích và hàm kế tiếp trả về bộ ba (trạng thái, hành động, chi phí bước) \cite{b1}. Hành động thuộc $\{$N, S, E, W$\}$. Bốn bài toán được dùng: \texttt{PositionSearchProblem} (trạng thái là ô $(x,y)$, chi phí 1 hoặc theo hàm chi phí cho trước), \texttt{CornersProblem} (vị trí và tập góc đã thăm, tối đa $W\!\cdot\!H\!\cdot\!2^{4}$ trạng thái), \texttt{FoodSearchProblem} (vị trí và lưới thức ăn) và \texttt{AnyFoodSearchProblem} (đích là ô có thức ăn bất kỳ). Mục tiêu là đường đi có chi phí nhỏ nhất với số nút mở rộng ít nhất có thể.
+
+\textit{Project 2.} Pac-Man (chỉ số 0) và $m$ con ma lần lượt hành động. Trạng thái \texttt{GameState} gồm vị trí các tác tử, lưới thức ăn, capsule, bộ đếm sợ của từng ma và điểm hiện tại. Hành động lấy từ \texttt{getLegalActions}, hàm chuyển là \texttt{generateSuccessor}. Điểm trò chơi đóng vai trò hàm tiện ích: $+10$ khi ăn thức ăn, $-1$ mỗi bước, $+200$ khi ăn ma đang sợ, $+500$ khi thắng, $-500$ khi thua. Tại mỗi lượt, Pac-Man chọn hành động tối đa hóa giá trị thu được từ tìm kiếm độ sâu hữu hạn và hàm đánh giá ở nút lá.
 
 \subsection{Phân công công việc}
-\begin{table}[!ht]
+
+\begin{table}[H]
     \centering
     \renewcommand{\arraystretch}{1.15}
     \scriptsize
+    \setlength{\tabcolsep}{3pt}
     \caption{Bảng phân công công việc cho từng thành viên.}
     \label{tab:phancong}
-    \resizebox{\columnwidth}{!}{%
-    \begin{tabular}{cccp{4.6cm}}
-    \hline
-        \textbf{Thành viên} & \textbf{Mã sinh viên} & \textbf{Đóng góp} & \textbf{Công việc} \\
-    \hline
-        Trường Ngọc Anh & \todo{MSSV} & 25\% & P1: q1--q4 (DFS, BFS, UCS, A*), q8 (ClosestDot); testcase so sánh Minimax và Alpha-Beta \\
-        Giáp Vũ Diệu Kỳ & \todo{MSSV} & 25\% & P1: q5 (CornersProblem), q6, q7 (heuristic); P2: q5 (cùng TV4) \\
-        Nguyễn Mai Phương Thúy & \todo{MSSV} & 25\% & P2: q1 (Reflex), q2 (Minimax), q3 (Alpha-Beta), q4 (Expectimax) \\
+    \begin{tabularx}{\columnwidth}{cccX}
+    \toprule
+        \textbf{Thành viên} & \textbf{MSSV} & \textbf{Đóng góp} & \textbf{Công việc} \\
+    \midrule
+        Trương Ngọc Anh & 24022944 & 25\% & P1: q1--q4 (DFS, BFS, UCS, A*), q8 (ClosestDot); testcase so sánh Minimax và Alpha-Beta \\
+        Giáp Vũ Diệu Kỳ & 24023008 & 25\% & P1: q5 (CornersProblem), q6, q7 (heuristic); P2: q5 (cùng TV4) \\
+        Nguyễn Mai Phương Thúy & 24023072 & 25\% & P2: q1 (Reflex), q2 (Minimax), q3 (Alpha-Beta), q4 (Expectimax) \\
         Nguyễn Hồng Đăng & 24022956 & 25\% & P0: môi trường, repo Git, Autograder; script kiểm thử; P2: q5 (cùng TV2); tổng hợp báo cáo \\
-    \hline
-    \end{tabular}}
+    \bottomrule
+    \end{tabularx}
 \end{table}
 
 \subsection{Bố cục}
-\todo{1-2 câu: Mục II trình bày phương pháp, Mục III trình bày thực nghiệm và kết quả, Mục IV kết luận.}
+Mục II trình bày phương pháp cho Project 1 và Project 2. Mục III trình bày thiết lập thực nghiệm, kết quả định lượng và thảo luận các tình huống thất bại. Mục IV kết luận.
 
 \section{Phương pháp thực hiện}
 
 \subsection{Project 1: Tìm kiếm}
 
 \subsubsection{Các thuật toán tìm kiếm cơ bản (q1--q4)}
-Cả bốn thuật toán cùng dùng khung tìm kiếm đồ thị (graph search) với tập nút đã thăm, chỉ khác cấu trúc lưu biên: \texttt{Stack} cho DFS, \texttt{Queue} cho BFS, \texttt{PriorityQueue} theo chi phí $g(n)$ cho UCS, và theo $f(n)=g(n)+h(n)$ cho A* \cite{b1,b2,b5}. Kiểm tra đích khi lấy nút ra khỏi biên.
+Cả bốn thuật toán dùng khung tìm kiếm đồ thị (graph search) và chỉ khác cấu trúc lưu biên: \texttt{Stack} cho DFS, \texttt{Queue} cho BFS, \texttt{PriorityQueue} theo chi phí $g(n)$ cho UCS và theo $f(n)=g(n)+h(n)$ cho A* \cite{b1,b2,b5}:
 \begin{equation}
-f(n)=g(n)+h(n)\label{eq:astar}
+f(n)=g(n)+h(n).\label{eq:astar}
 \end{equation}
-\todo{Nêu thêm: cách lưu đường đi (hành động), xử lý nút trùng, tính tối ưu và độ phức tạp của từng thuật toán.}
+Mỗi phần tử của biên lưu trạng thái cùng danh sách hành động dẫn tới nó; danh sách mới được tạo bằng \texttt{path + [action]} để các nhánh con không dùng chung một danh sách. DFS, UCS và A* đánh dấu nút đã mở khi lấy ra khỏi biên và bỏ qua nút đã có trong tập này. BFS đánh dấu khi đẩy vào biên, hợp lệ vì mọi bước có chi phí bằng nhau. Cả bốn thuật toán kiểm tra đích khi lấy nút ra khỏi biên. Với UCS và A*, đường đầu tiên chạm đích khi đẩy vào có thể đắt hơn đường vòng (bài kiểm tra \texttt{ucs\_5\_goalAtDequeue}: cạnh trực tiếp chi phí 10, đường vòng chi phí 3). Tập nút đã mở ngăn lặp vô hạn trên đồ thị có chu trình và ngăn mở một trạng thái hai lần. Về độ phức tạp, DFS có thời gian $O(b^{m})$ và không tối ưu. BFS, UCS và A* có thời gian $O(b^{d})$ trong trường hợp xấu nhất. BFS tối ưu khi chi phí bước bằng nhau, UCS tối ưu với chi phí dương, A* tối ưu khi $h$ nhất quán. Với heuristic rỗng, A* trở thành UCS.
 
 \subsubsection{Bài toán bốn góc và heuristic (q5, q6)}
-\todo{Biểu diễn trạng thái của CornersProblem (vị trí + các góc đã thăm), hàm kế tiếp, kiểm tra đích. Mô tả heuristic cho q6 và chứng minh admissible, consistent.}
+Trạng thái của \texttt{CornersProblem} là cặp (vị trí, bộ bốn giá trị logic cho các góc đã thăm), nên có tối đa $16\,W\!H$ trạng thái. Nếu chỉ lưu vị trí, tập nút đã mở sẽ chặn việc quay lại một ngã tư để đi tới góc còn lại. Nếu ô xuất phát trùng một góc, góc đó được đánh dấu đã thăm ngay từ đầu. Hàm kế tiếp cập nhật bộ góc khi bước vào một góc, đích là cả bốn góc đã thăm, chi phí mỗi bước là 1. Tường là dữ liệu tĩnh nên không đưa vào trạng thái.
+
+Heuristic \texttt{cornersHeuristic} chọn lần lượt góc chưa thăm gần nhất theo khoảng cách Manhattan $D_M$. Đặt $c_0$ là vị trí hiện tại và $c_1,\ldots,c_k$ là chuỗi góc được chọn ($k$ là số góc chưa thăm):
+\begin{equation}
+h_{\mathrm{corners}}(s)=\sum_{j=1}^{k}D_M(c_{j-1},c_j),\label{eq:corners}
+\end{equation}
+và $h_{\mathrm{corners}}(s)=0$ khi $k=0$. Mỗi chặng dùng khoảng cách Manhattan không vượt độ dài đường thực, nhưng chuỗi chọn tham lam chưa chắc là chuỗi ngắn nhất qua các góc. Vì vậy nhóm chưa chứng minh được tính chấp nhận được và nhất quán cho mọi trạng thái. Hai tính chất này chỉ được kiểm chứng qua các bài kiểm tra của Autograder (mục III-B).
 
 \subsubsection{Heuristic cho bài toán ăn hết thức ăn (q7)}
-\todo{Mô tả foodHeuristic (ví dụ dùng khoảng cách mê cung \texttt{mazeDistance} giữa các thức ăn xa nhất), chứng minh admissible, consistent; nêu cách lưu đệm trong \texttt{problem.heuristicInfo}.}
+Với $F$ là tập thức ăn còn lại và $p$ là vị trí Pac-Man, \texttt{foodHeuristic} trả về khoảng cách mê cung lớn nhất tới một viên thức ăn:
+\begin{equation}
+h_{\mathrm{food}}(p,F)=\max_{f\in F}D_{\mathrm{maze}}(p,f),\quad h_{\mathrm{food}}=0\ \text{khi}\ F=\varnothing,\label{eq:food}
+\end{equation}
+trong đó $D_{\mathrm{maze}}$ là độ dài đường đi ngắn nhất có xét tường, tính bằng BFS (\texttt{mazeDistance}). \emph{Chấp nhận được:} Pac-Man buộc phải tới viên xa nhất, nên chi phí còn lại không nhỏ hơn $h_{\mathrm{food}}$. \emph{Nhất quán:} với một bước tới ô lân cận $p'$, $D_{\mathrm{maze}}(p,f)\le D_{\mathrm{maze}}(p',f)+1$ cho mọi $f$. Tập thức ăn chỉ co lại khi bước vào ô có thức ăn (khoảng cách tới viên đó khi đó là 0, còn $h$ trước bước là 1 nên vẫn thỏa), do đó $h(s)-h(s')\le 1$. Việc lấy max thay vì tổng tránh tính trùng các viên nằm trên đường tới viên xa. Kết quả BFS được lưu trong \texttt{problem.heuristicInfo} theo khóa (vị trí, viên thức ăn) để không chạy lại cho cùng một cặp. Heuristic Manhattan yếu trên \texttt{trickySearch} vì tường chữ U làm đường thực dài hơn nhiều so với đường chim bay.
 
 \subsubsection{Tìm thức ăn gần nhất (q8)}
-\todo{Cách dùng BFS trên \texttt{AnyFoodSearchProblem} để lặp tìm thức ăn gần nhất; nhận xét đường đi tham lam không đảm bảo tối ưu toàn cục.}
+\texttt{AnyFoodSearchProblem.isGoalState} trả về \texttt{food[x][y]}, và \texttt{findPathToClosestDot} gọi \texttt{search.bfs} trên bài toán này; \texttt{ClosestDotSearchAgent} lặp lại cho đến khi hết thức ăn. BFS bảo đảm viên được chọn là viên gần nhất ở từng bước, nhưng chuỗi lựa chọn tham lam không bảo đảm đường đi tối ưu toàn cục.
 
 \subsection{Project 2: Tìm kiếm đối kháng}
 
 \subsubsection{ReflexAgent (q1)}
-\todo{Các đặc trưng trong hàm đánh giá: khoảng cách đến thức ăn gần nhất, khoảng cách đến ma, thời gian ma bị dọa; trọng số.}
+Tác tử chấm điểm từng hành động hợp lệ $a$ trên trạng thái kế tiếp $s'$ và chọn hành động điểm cao nhất (hòa thì chọn ngẫu nhiên). Với $F,F'$ là tập thức ăn trước và sau hành động:
+\begin{equation}
+R(s,a)=S(s')+B_R+\sum_i H_i-10\cdot\mathbf{1}[a=\mathrm{Stop},\,F'\neq\varnothing],\label{eq:reflex}
+\end{equation}
+với $B_R=\frac{10}{d'_{\min}+1}+10(|F|-|F'|)$ khi $F'\neq\varnothing$ ($d'_{\min}$ là khoảng cách Manhattan tới thức ăn gần nhất) và $B_R=0$ trong trường hợp còn lại. Với ma $i$ ở khoảng cách $d_i$ và bộ đếm sợ $t_i$: $H_i=\frac{8}{d_i+1}$ nếu $t_i>0$ và $d_i<t_i$; nếu $t_i=0$ thì $H_i=-1000,-200,-50,-10$ tương ứng $d_i=0,1,2,3$; các trường hợp còn lại $H_i=0$.
 
 \subsubsection{Minimax và Alpha-Beta (q2, q3)}
-Minimax luân phiên tầng max (Pac-Man, \texttt{agentIndex}=0) và các tầng min (mỗi con ma một tầng); một mức độ sâu tính trọn một lượt của mọi tác tử \cite{b1,b3}. Alpha-Beta cắt tỉa các nhánh không ảnh hưởng đến giá trị tại gốc, nên cho cùng kết quả với Minimax nhưng sinh ít nút hơn \cite{b4}.
-\todo{Công thức/giả mã cho hai thuật toán (có thể dùng gói \texttt{algorithmic}); điều kiện cắt tỉa $\alpha$, $\beta$.}
+Với $n=m+1$ tác tử, tại độ sâu $d$ và tác tử $i$, giá trị $V$ được định nghĩa đệ quy \cite{b1,b3}:
+\begin{equation}
+V(s,d,i)=
+\begin{cases}
+\mathrm{Eval}(s), & s\ \text{kết thúc hoặc}\ d=D,\\
+\max_a V(s_a,d',i'), & i=0,\\
+\min_a V(s_a,d',i'), & i\ge 1,
+\end{cases}\label{eq:minimax}
+\end{equation}
+với $i'=(i+1)\bmod n$ và $d'=d+1$ khi $i'=0$, ngược lại $d'=d$. Một đơn vị độ sâu gồm một lượt của Pac-Man và một lượt của mọi ma, nên cây có $D(m+1)$ tầng. Trạng thái thắng hoặc thua được kiểm tra trước khi đọc danh sách hành động. Tại gốc, tác tử chọn hành động có giá trị lớn nhất và giữ hành động đầu tiên khi hòa. Alpha-Beta giữ cận $\alpha$ (giá trị tốt nhất MAX đã bảo đảm) và $\beta$ (giá trị tốt nhất MIN đã bảo đảm), cắt tỉa nhánh còn lại khi $v>\beta$ ở nút MAX hoặc $v<\alpha$ ở nút MIN \cite{b4}. Cài đặt dùng bất đẳng thức chặt để tập nút sinh ra khớp bộ chấm, cập nhật $\alpha$ ngay tại gốc sau mỗi hành động của Pac-Man và giữ nguyên thứ tự duyệt các nhánh con. Alpha-Beta cho cùng hành động với Minimax nhưng sinh ít nút hơn.
 
 \subsubsection{Expectimax (q4)}
-\todo{Mô hình ma chọn hành động ngẫu nhiên đều; tầng kỳ vọng thay cho tầng min; khác biệt hành vi so với Minimax.}
+Các ma được mô hình hóa chọn đều ngẫu nhiên trong các hành động hợp lệ (đúng với \texttt{RandomGhost}). Tầng MIN được thay bằng tầng kỳ vọng:
+\begin{equation}
+V(s,d,i)=\frac{1}{|A(s)|}\sum_{a\in A(s)}V(s_a,d',i'),\quad i\ge 1.\label{eq:expectimax}
+\end{equation}
+Do trung bình phụ thuộc mọi nhánh con nên không áp dụng được cắt tỉa kiểu Alpha-Beta.
 
 \subsubsection{Hàm đánh giá tốt hơn (q5)}
-\todo{Các đặc trưng đã chọn (thức ăn, capsule, ma thường, ma bị dọa), công thức tổ hợp tuyến tính, cách chọn trọng số.}
+Hàm \texttt{betterEvaluationFunction} chỉ nhận trạng thái hiện tại. Trạng thái thắng hoặc thua trả về $S(s)\pm 10^{6}$, một giá trị hữu hạn để phép trung bình của Expectimax không sinh ra $\pm\infty$ hay \texttt{nan}. Với các trạng thái còn lại:
+\begin{equation}
+E(s)=S(s)-4|F(s)|+B_F(s)+\sum_i G_i(s),\label{eq:eval}
+\end{equation}
+\begin{gather*}
+B_F = \frac{10}{d_{\min}+1}\ (F\neq\varnothing), \\
+G_i = 
+\begin{cases}
+\frac{20}{d_i+1}, & t_i>0,\ d_i<t_i,\\
+0, & t_i>0,\ d_i\ge t_i,\\
+-\frac{12}{d_i+1}-200\cdot\mathbf{1}[d_i\le 1], & t_i=0.
+\end{cases}
+\end{gather*}
+Khoảng cách dùng Manhattan thay cho \texttt{mazeDistance} vì hàm được gọi ở mọi nút lá và tổng thời gian cả ván bị giới hạn 120 giây. Cộng 1 ở mẫu tránh chia cho 0. Hàm không có khoản phạt riêng cho hành động \texttt{Stop}; hệ quả được phân tích ở mục III-E. Các phiên bản trọng số đã thử được trình bày ở mục III-C.
 
 \section{Thực nghiệm và kết quả}
 
 \subsection{Thiết lập thực nghiệm}
-\todo{Môi trường (Python, hệ điều hành), layout dùng, seed, số ván mỗi cấu hình, tiêu chí đo (số nút mở rộng, độ dài/chi phí đường đi, tỉ lệ thắng, điểm trung bình, thời gian).}
+Môi trường chạy: Python 3.14.7, Microsoft Windows 11 Home, 12th Gen Intel(R) Core(TM) i5-12450H. Điểm Autograder lấy từ lần chạy ngày 13/11/2026 (seed \texttt{random.seed(0)} trong \texttt{autograder.py}). Ở Project 1, số nút mở rộng lấy từ bộ đếm \texttt{\_expanded} của bài toán và độ dài đường đi tính theo số bước (chi phí đơn vị). Các thực nghiệm Project 2 dùng hai \texttt{RandomGhost}, layout \texttt{smallClassic} (và \texttt{trappedClassic} ở mục III-C), 10 ván mỗi cấu hình. Bảng~\ref{tab:p2} dùng seed 0; so sánh các phiên bản hàm đánh giá dùng cờ \texttt{-f} (seed \texttt{cs188}). Các chỉ số đo gồm số nút mở rộng, độ dài đường đi, số trạng thái ghi nhận bởi bộ đếm \texttt{GameState.getAndResetExplored} của Autograder, tỉ lệ thắng, điểm trung bình và thời gian mỗi ván.
 
 \subsection{Kết quả Project 1}
 \begin{table}[!ht]
     \centering
-    \caption{Số nút mở rộng và chi phí đường đi trên các mê cung.}
+    \scriptsize
+    \setlength{\tabcolsep}{4pt}
+    \caption{Số nút mở rộng / độ dài đường đi (bước) trên hai mê cung.}
     \label{tab:p1}
     \begin{tabular}{lcccc}
     \toprule
-    Layout & DFS & BFS & UCS & A* \\
+    Layout & DFS & BFS & UCS & A* (Manhattan) \\
     \midrule
-    \texttt{mediumMaze} & \todo{} & \todo{} & \todo{} & \todo{} \\
-    \texttt{bigMaze} & \todo{} & \todo{} & \todo{} & \todo{} \\
+    \texttt{mediumMaze} & 146 / 130 & 269 / 68 & 269 / 68 & 221 / 68 \\
+    \texttt{bigMaze} & 390 / 210 & 620 / 210 & 620 / 210 & 549 / 210 \\
     \bottomrule
     \end{tabular}
 \end{table}
 
+\begin{figure}[!t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar, width=0.95\columnwidth, height=5cm, bar width=9pt,
+  xmin=0.4, xmax=4.6, ymin=0, ymax=760,
+  xtick={1,2,3,4}, xticklabels={DFS,BFS,UCS,A$^*$},
+  ylabel={Số nút mở rộng}, ylabel style={font=\scriptsize},
+  tick label style={font=\scriptsize},
+  legend style={at={(0.03,0.97)},anchor=north west,font=\scriptsize},
+  nodes near coords, nodes near coords style={font=\tiny}]
+\addplot coordinates {(1,146)(2,269)(3,269)(4,221)};
+\addplot coordinates {(1,390)(2,620)(3,620)(4,549)};
+\legend{\texttt{mediumMaze},\texttt{bigMaze}}
+\end{axis}
+\end{tikzpicture}
+\caption{Số nút mở rộng của bốn thuật toán tìm kiếm.}
+\label{fig:nodes}
+\end{figure}
+
+Bảng~\ref{tab:p1} và Hình~\ref{fig:nodes} cho thấy trên \texttt{mediumMaze} DFS mở ít nút nhất (146) nhưng trả về đường 130 bước, gần gấp đôi 68 bước của BFS, UCS và A*. Trên \texttt{bigMaze}, cả bốn thuật toán đều cho đường 210 bước. BFS và UCS mở 620 nút, A* với heuristic Manhattan mở 549 nút. So với UCS, A* mở ít hơn 48 nút (17,8\%) trên \texttt{mediumMaze} và 71 nút (11,5\%) trên \texttt{bigMaze}, với cùng độ dài đường đi. Với UCS trên \texttt{mediumMaze}, hàm chi phí $0{,}5^{x}$ (StayEast) cho 260 nút và đường 74 bước; hàm $2^{x}$ (StayWest) cho 173 nút và đường 152 bước; chi phí đơn vị cho 269 nút và 68 bước. UCS chấp nhận đường dài hơn để tránh vùng có chi phí bước cao.
+
 \begin{table}[!ht]
     \centering
-    \caption{Số nút mở rộng của A* với các heuristic (q6, q7).}
+    \scriptsize
+    \setlength{\tabcolsep}{4pt}
+    \caption{Số nút mở rộng của A* với heuristic rỗng và heuristic của nhóm (q6, q7).}
     \label{tab:heur}
-    \begin{tabular}{lcc}
+    \begin{tabular}{lccc}
     \toprule
-    Bài toán & Heuristic rỗng & Heuristic của nhóm \\
+    Bài toán & Heuristic rỗng & Heuristic nhóm & Giảm \\
     \midrule
-    Corners (\texttt{mediumCorners}) & \todo{} & \todo{} \\
-    Food (\texttt{trickySearch}) & \todo{} & \todo{} \\
+    Corners (\texttt{mediumCorners}) & 1966 & 692 & 64,80\% \\
+    Food (\texttt{trickySearch}) & 16688 & 4137 & 75,21\% \\
     \bottomrule
     \end{tabular}
 \end{table}
-\todo{Nhận xét ngắn: thuật toán nào mở rộng ít nút nhất, heuristic cải thiện bao nhiêu.}
+
+Với \texttt{mediumCorners}, A* tìm được đường tối ưu dài 106 bước. Số nút giảm từ 1966 xuống 692, dưới cả ba ngưỡng chấm điểm của q6 (2000, 1600, 1200). Với \texttt{trickySearch}, số nút giảm từ 16688 xuống 4137, dưới cả bốn ngưỡng của q7 (15000, 12000, 9000, 7000). Phần trăm giảm tính bằng (rỗng $-$ nhóm)/rỗng. Ở q8, cả 13/13 bài kiểm tra đạt, và \texttt{ClosestDotSearchAgent} tìm được đường 350 bước trên \texttt{bigSearch}.
 
 \subsection{Kết quả Project 2}
 \begin{table}[!ht]
     \centering
-    \caption{So sánh các tác tử trên \texttt{smallClassic} ($n$ ván).}
+    \scriptsize
+    \setlength{\tabcolsep}{3pt}
+    \caption{Các tác tử trên \texttt{smallClassic}, hai \texttt{RandomGhost}, 10 ván, seed 0.}
     \label{tab:p2}
-    \begin{tabular}{lccc}
+    \begin{tabular}{lccccc}
     \toprule
-    Tác tử & Tỉ lệ thắng & Điểm TB & Thời gian/ván \\
+    Tác tử & Thắng & Điểm TB & Min & Max & s/ván \\
     \midrule
-    Reflex & \todo{} & \todo{} & \todo{} \\
-    Minimax (depth 3) & \todo{} & \todo{} & \todo{} \\
-    Alpha-Beta (depth 3) & \todo{} & \todo{} & \todo{} \\
-    Expectimax (depth 3) & \todo{} & \todo{} & \todo{} \\
-    Hàm đánh giá tốt hơn & \todo{} & \todo{} & \todo{} \\
+    Reflex & 9/10 & 1006,4 & $-336$ & 1551 & 0,80 \\
+    Minimax, độ sâu 3 & 5/10 & 430,3 & $-397$ & 1287 & 90,97 \\
+    Alpha-Beta, độ sâu 3 & 4/10 & 313,4 & $-319$ & 1133 & 93,52 \\
+    Expectimax, độ sâu 3 & 4/10 & 140,7 & $-1180$ & 1455 & 331,78 \\
+    Expectimax + better, độ sâu 2 & 10/10 & 1405,9 & 1147 & 1741 & 6,92 \\
     \bottomrule
     \end{tabular}
 \end{table}
-\todo{Nhận xét: Alpha-Beta giảm thời gian bao nhiêu so với Minimax với cùng kết quả; Expectimax so với Minimax khi ma ngẫu nhiên.}
+
+\begin{figure}[!t]
+\centering
+\begin{minipage}{0.49\columnwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar, width=\linewidth, height=3.7cm, bar width=7pt,
+  xmin=0.4, xmax=5.6, ymin=0, ymax=118,
+  xtick={1,2,3,4,5}, xticklabels={Reflex,Minimax,Alpha-Beta,Expectimax,EM+better},
+  xticklabel style={rotate=45,anchor=east,font=\tiny},
+  ylabel={Thắng (\%)}, ylabel style={font=\scriptsize},
+  tick label style={font=\tiny},
+  nodes near coords, nodes near coords style={font=\tiny}]
+\addplot coordinates {(1,90)(2,50)(3,40)(4,40)(5,100)};
+\end{axis}
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.49\columnwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar, width=\linewidth, height=3.7cm, bar width=7pt,
+  xmin=0.4, xmax=5.6, ymin=0, ymax=1750,
+  xtick={1,2,3,4,5}, xticklabels={Reflex,Minimax,Alpha-Beta,Expectimax,EM+better},
+  xticklabel style={rotate=45,anchor=east,font=\tiny},
+  ylabel={Điểm trung bình}, ylabel style={font=\scriptsize},
+  tick label style={font=\tiny},
+  nodes near coords, nodes near coords style={font=\tiny, /pgf/number format/fixed, /pgf/number format/precision=0}]
+\addplot coordinates {(1,1006.4)(2,430.3)(3,313.4)(4,140.7)(5,1405.9)};
+\end{axis}
+\end{tikzpicture}
+\end{minipage}
+\caption{Tỉ lệ thắng (trái) và điểm trung bình (phải) trên \texttt{smallClassic}, 10 ván mỗi tác tử (EM+better: Expectimax độ sâu 2 với hàm đánh giá của nhóm).}
+\label{fig:agents}
+\end{figure}
+
+Bảng~\ref{tab:p2} và Hình~\ref{fig:agents} cho thấy Expectimax độ sâu 2 với hàm đánh giá của nhóm đạt 10/10 ván thắng, điểm trung bình 1405,9 và 6,92 giây mỗi ván. Reflex thắng 9/10 ván và nhanh nhất (0,80 giây mỗi ván). Ba tác tử độ sâu 3 dùng hàm điểm mặc định thắng 4 đến 5 trên 10 ván và chậm hơn nhiều (91 đến 332 giây mỗi ván). Chất lượng hàm đánh giá do đó ảnh hưởng nhiều hơn độ sâu tìm kiếm. Tuy nhiên, so sánh Expectimax mặc định độ sâu 3 với bản dùng hàm của nhóm độ sâu 2 thay đổi đồng thời cả hàm đánh giá lẫn độ sâu, nên chưa tách được tác dụng riêng của từng yếu tố. Hai bài kiểm tra Autograder cho kết quả cùng chiều: Reflex trên \texttt{openClassic} thắng 10/10 (điểm trung bình 1225,3, khoảng 1195 đến 1251), Expectimax với \texttt{evalFn=better} trên \texttt{smallClassic} thắng 10/10 (điểm trung bình 1190,6, khoảng 866 đến 1346).
+
+\begin{table}[!ht]
+    \centering
+    \scriptsize
+    \setlength{\tabcolsep}{3pt}
+    \caption{Minimax và Alpha-Beta tại trạng thái ban đầu, độ sâu 3.}
+    \label{tab:mmab}
+    \begin{tabular}{lcccccc}
+    \toprule
+    & \multicolumn{2}{c}{Hành động} & \multicolumn{2}{c}{Trạng thái} & \multicolumn{2}{c}{Thời gian (s)} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+    Layout & MM & AB & MM & AB & MM & AB \\
+    \midrule
+    \texttt{minimaxClassic} & Stop & Stop & 607 & 482 & 0,0455 & 0,0318 \\
+    \texttt{smallClassic} & West & West & 423 & 164 & 0,0350 & 0,0107 \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+Bảng~\ref{tab:mmab} cho thấy Alpha-Beta chọn cùng hành động với Minimax ở cả hai trạng thái và giảm số trạng thái ghi nhận từ 607 xuống 482 (20,59\%) trên \texttt{minimaxClassic}, từ 423 xuống 164 (61,23\%) trên \texttt{smallClassic}. Đây là bằng chứng trực tiếp về lợi ích của cắt tỉa trên các trạng thái này. Ở Bảng~\ref{tab:p2}, Alpha-Beta lại thắng ít hơn Minimax một ván (4 so với 5) và mất thời gian mỗi ván hơi nhiều hơn (93,52 so với 90,97 giây). Hai chỉ số này chưa được giải thích bằng số liệu hiện có và có thể do biến động giữa các lần chạy, nên nhóm không dùng chúng để so sánh chất lượng quyết định của hai thuật toán.
+
+\begin{table}[!ht]
+    \centering
+    \scriptsize
+    \setlength{\tabcolsep}{4pt}
+    \caption{\texttt{trappedClassic}, độ sâu 3, 10 ván.}
+    \label{tab:trap}
+    \begin{tabular}{lcc}
+    \toprule
+    Tác tử & Thắng & Điểm TB \\
+    \midrule
+    Alpha-Beta & 0/10 & $-501$ \\
+    Expectimax & 5/10 & 15,0 \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+Bảng~\ref{tab:trap} cho thấy Alpha-Beta thua cả 10 ván còn Expectimax thắng 5/10. Alpha-Beta giả định ma luôn chọn hành động bất lợi nhất cho Pac-Man. Khi mọi nhánh đều dẫn tới thua theo giả định này, Pac-Man chọn chết sớm để giảm phạt thời gian $-1$ mỗi bước. Expectimax tính giá trị kỳ vọng theo hành động ngẫu nhiên của ma nên vẫn chọn các hướng có cơ hội thoát. Trong cấu hình có hai \texttt{RandomGhost}, mô hình ngẫu nhiên khớp với đối thủ thực tế hơn.
+
+\begin{table}[!ht]
+    \centering
+    \scriptsize
+    \setlength{\tabcolsep}{3pt}
+    \caption{Các phiên bản hàm đánh giá (Expectimax, \texttt{smallClassic}, độ sâu 3, cờ \texttt{-f}).}
+    \label{tab:ver}
+    \begin{tabular}{llcccc}
+    \toprule
+    & & \multicolumn{2}{c}{10 ván} & \multicolumn{2}{c}{30 ván} \\
+    \cmidrule(lr){3-4}\cmidrule(lr){5-6}
+    Phiên bản & Thay đổi & Thắng & Điểm TB & Thắng & Điểm TB \\
+    \midrule
+    Mặc định (Berkeley) & không dùng \texttt{better} & 7/10 & 912,3 & -- & -- \\
+    Gốc (= v1) & không & 10/10 & 1378,8 & 30/30 & 1404,6 \\
+    v2 & wGhost 12 $\to$ 24 & 9/10 & 1269,9 & -- & -- \\
+    v3 & wNearestFood 10 $\to$ 20 & 10/10 & 1523,4 & 27/30 & 1312,5 \\
+    v4 & wFoodCount 4 $\to$ 8 & 9/10 & 1145,7 & -- & -- \\
+    v5 & thêm capsule ($w=10$) & 10/10 & 1391,9 & 26/30 & 1284,4 \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+Trên 10 ván, v3 có điểm trung bình cao nhất (1523,4) còn v2 và v4 mỗi bản thua một ván (Bảng~\ref{tab:ver}). Khi tăng lên 30 ván, v3 và v5 chỉ thắng 27/30 và 26/30 với điểm trung bình thấp hơn bản gốc (30/30, 1404,6). Mẫu 10 ván vì vậy chưa đủ để phân biệt các phiên bản, và nhóm giữ nguyên \texttt{betterEvaluationFunction} ban đầu.
 
 \subsection{Kết quả Autograder}
 \begin{table}[!ht]
     \centering
-    \caption{Điểm Autograder.}
+    \scriptsize
+    \setlength{\tabcolsep}{3pt}
+    \caption{Điểm Autograder (13/11/2026). Điểm tối đa Project 1: 3,3,3,3,3,3,4,3; Project 2: 4,5,5,5,6.}
     \label{tab:grader}
-    \begin{tabular}{lcc}
+    \begin{tabular}{lccccccccc}
     \toprule
-    Phần & Điểm đạt & Điểm tối đa \\
+    Phần & q1 & q2 & q3 & q4 & q5 & q6 & q7 & q8 & Tổng \\
     \midrule
-    Project 1 (q1--q8) & \todo{} & 25 \\
-    Project 2 (q1--q5) & \todo{} & 25 \\
+    Project 1 & 3 & 3 & 3 & 3 & 3 & 3 & 5 & 3 & 26/25 \\
+    Project 2 & 4 & 5 & 5 & 5 & 6 & -- & -- & -- & 25/25 \\
     \bottomrule
     \end{tabular}
 \end{table}
-% Có thể thêm hình: \begin{figure}[htbp]\centerline{\includegraphics[width=\columnwidth]{hinh1.png}}\caption{...}\label{fig:hinh1}\end{figure}
+
+Ở q7, bài kiểm tra \texttt{food\_heuristic\_grade\_tricky} cấp 1 điểm cơ bản cộng 1 điểm cho mỗi ngưỡng (15000, 12000, 9000, 7000). Heuristic của nhóm mở 4137 nút nên đạt cả bốn ngưỡng, cho 5 điểm, vượt trần 4 điểm trong tệp cấu hình, nên tổng Project 1 hiển thị 26/25.
+
+\subsection{Thảo luận: các tình huống thất bại}
+Khi quan sát chơi có đồ họa, nhóm thấy Pac-Man thắng 4/5 ván và có lúc đứng chờ ma tới gần rồi mới chạy. Nhóm ghi vết lại cấu hình \texttt{ExpectimaxAgent}, \texttt{evalFn=better}, độ sâu 2, hai \texttt{RandomGhost}, 5 ván, seed \texttt{cs188}, tắt đồ họa. Kết quả là 4/5 ván thắng với điểm 1677, 1360, 1274, 16 và 1689 (trung bình 1203,2). Đây là đợt chạy riêng, khác seed và cỡ mẫu so với Bảng~\ref{tab:p2}.
+
+Số hành động \texttt{Stop} lần lượt là 40, 7, 38, 138 và 60 trên 173, 90, 176, 274 và 161 lượt. Ở ván thua (ván 4), \texttt{Stop} chiếm 138/274 lượt (50,36\%) và số thức ăn còn lại giữ nguyên ở 19 qua hơn 200 lượt liên tiếp (từ lượt 62 đến đầu lượt 268). Ở các lượt 260 đến 263, ma gần nhất lần lượt cách 5, 4, 3 và 2 ô, và Pac-Man đứng yên. Phát lại ván cho thấy tại bốn lượt này, \texttt{Stop} và \texttt{East} có cùng giá trị kỳ vọng (422,583; 420,931; 419,333; 317,742). Trong danh sách hành động hợp lệ, \texttt{Stop} đứng trước \texttt{East}, và cài đặt chỉ cập nhật hành động tốt nhất khi giá trị lớn hơn chặt, nên \texttt{Stop} được giữ. Cơ chế hòa điểm không giải thích mọi lần đứng chờ: ở lượt 73, giá trị \texttt{Stop} là 609,131, cao hơn \texttt{North} (609,107) và \texttt{South} (609,096). Hàm đánh giá chỉ dùng khoảng cách Manhattan và không phạt \texttt{Stop}, nên một bước đứng yên có thể được chấm ngang hoặc cao hơn một bước di chuyển.
+
+Đứng chờ không dẫn tới thua trong mọi ván. Ván 5 có chuỗi 56 hành động \texttt{Stop} liên tiếp (lượt 81 đến 136) nhưng vẫn thắng, và ở ván thua, Pac-Man thoát khỏi đoạn đứng chờ ở lượt 260 đến 263 rồi mới thua. Ở lượt cuối của ván thua (lượt 274), giá trị \texttt{Stop} là $-499811$, cao hơn \texttt{South} ($-499817{,}45$) và \texttt{East} ($-999974$), nghĩa là mọi hành động đều dẫn tới thua theo mô hình tìm kiếm. Việc dừng hình khi chơi không phải do tính toán chậm: trên 874 lượt, thời gian chọn hành động trung bình là 10,96 ms, trung vị 8,66 ms và lớn nhất 56,51 ms (chỉ đo \texttt{getAction}, không gồm đồ họa). Vòng lặp trò chơi cũng chờ \texttt{getAction} trả về rồi mới cho ma đi, nên chuỗi ma tiến lại gần trong khi Pac-Man giữ nguyên vị trí là hệ quả của việc chọn \texttt{Stop}. Các hướng cải thiện chưa được triển khai gồm ưu tiên hành động di chuyển khi hòa với \texttt{Stop}, phạt nhẹ \texttt{Stop} và dùng khoảng cách có xét tường tới thức ăn. Các thay đổi này cần đo lại vì một số lần đứng chờ giúp tránh ma.
 
 \section{Kết luận}
-\todo{Kết quả đạt được, hạn chế, hướng phát triển (3-5 câu).}
+Nhóm đã cài đặt DFS, BFS, UCS, A* với hai heuristic, các tác tử Reflex, Minimax, Alpha-Beta, Expectimax và một hàm đánh giá riêng, đạt 26/25 điểm Project 1 và 25/25 điểm Project 2 theo Autograder. Heuristic của nhóm giảm số nút mở rộng của A* 64,80\% và 75,21\% so với heuristic rỗng, và Alpha-Beta giảm số trạng thái ghi nhận 20,59\% đến 61,23\% so với Minimax với cùng hành động tại hai trạng thái được kiểm tra. Hạn chế gồm: heuristic q6 chưa có chứng minh chấp nhận được cho mọi trạng thái; chênh lệch số ván thắng và thời gian giữa Minimax và Alpha-Beta ở Bảng~\ref{tab:p2} chưa được giải thích; hàm đánh giá không phạt \texttt{Stop} nên có lúc Pac-Man đứng chờ ma; cỡ mẫu 10 ván chưa đủ để phân biệt các phiên bản trọng số. Hướng phát triển gồm thay heuristic q6 bằng tổng Manhattan nhỏ nhất trên mọi thứ tự duyệt góc (tối đa 24 hoán vị) để có cận dưới, xử lý hòa với \texttt{Stop}, và tăng cỡ mẫu thực nghiệm.
 
+\section*{Tuyên bố về việc sử dụng AI}
+Các thành viên sử dụng ChatGPT (OpenAI) và Claude (Anthropic) để hỗ trợ trong quá trình thực hiện bài tập lớn, gồm hỗ trợ viết mã Project 1 và Project 2 và soạn thảo báo cáo này (điền văn bản và mã LaTeX cho bảng, biểu đồ \texttt{pgfplots} dựa trên số liệu, công thức và mã nguồn do nhóm cung cấp). Toàn bộ số liệu thực nghiệm lấy từ log Autograder và kết quả chạy của nhóm; AI không tạo ra hay ước lượng số liệu. Mã do AI hỗ trợ đã được thành viên phụ trách đọc, kiểm thử bằng Autograder và chịu trách nhiệm. AI hỗ trợ gỡ lỗi và gợi ý cài đặt trong search.py, searchAgents.py và multiAgents.py; thành viên phụ trách từng câu đã đọc, chỉnh sửa và kiểm thử bằng Autograder. Các thành viên đã rà soát nội dung báo cáo, đối chiếu công thức với mã nguồn và số liệu với log, và chịu trách nhiệm về tính chính xác của toàn bộ nội dung nộp.
+
+\renewcommand{\refname}{Tài liệu tham khảo}
 \begin{thebibliography}{00}
 \bibitem{b1} S. Russell and P. Norvig, \textit{Artificial Intelligence: A Modern Approach}, 4th ed. Hoboken, NJ: Pearson, 2021.
 \bibitem{b2} P. E. Hart, N. J. Nilsson, and B. Raphael, ``A formal basis for the heuristic determination of minimum cost paths,'' \textit{IEEE Trans. Syst. Sci. Cybern.}, vol. 4, no. 2, pp. 100--107, Jul. 1968.
