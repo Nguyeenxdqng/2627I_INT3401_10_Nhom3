@@ -14,7 +14,7 @@
 | **Trương Ngọc Anh** | `24022944` | 25% | Project 1: q1–q4 (DFS, BFS, UCS, A*), q8 (ClosestDot); testcase so sánh Minimax và Alpha-Beta |
 | **Giáp Vũ Diệu Kỳ** | `24023008` | 25% | Project 1: q5 (`CornersProblem`), q6, q7 (heuristic); Project 2: q5 (`betterEvaluationFunction`) |
 | **Nguyễn Mai Phương Thúy** | `24023072` | 25% | Project 2: q1 (`ReflexAgent`), q2 (`MinimaxAgent`), q3 (`AlphaBetaAgent`), q4 (`ExpectimaxAgent`) |
-| **Nguyễn Hồng Đăng** | `24022956` | 25% | Thiết lập môi trường, repo Git, Autograder; script kiểm thử; Project 2: q5; tổng hợp báo cáo |
+| **Nguyễn Hồng Đăng** | `24022956` | 25% | Trưởng nhóm, quản lí tiến độ, phân công công việc, Thiết lập môi trường, repo Git, Autograder; script kiểm thử; Project 2: q5; tổng hợp báo cáo |
 
 ---
 
